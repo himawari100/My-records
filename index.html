@@ -64,10 +64,28 @@
     .header-row {
       background-color: #f9f9f9;
     }
+    #week-buttons {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #week-buttons button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h2>日々の記録表</h2>
+
+  <!-- 週移動ボタン -->
+  <div id="week-buttons">
+    <button onclick="changeWeek(-1)">◀ 前の週</button>
+    <button onclick="resetWeek()">今日</button>
+    <button onclick="changeWeek(1)">次の週 ▶</button>
+  </div>
+
   <table id="record-table">
     <tr class="header-row">
       <th>日付</th>
@@ -102,12 +120,12 @@
       return tr;
     }
 
-    function getStorageKey(index, type) {
-      const today = new Date();
-      today.setDate(today.getDate() + index);
-      const y = today.getFullYear();
-      const m = today.getMonth() + 1;
-      const d = today.getDate();
+    function getStorageKey(baseDate, index, type) {
+      const date = new Date(baseDate);
+      date.setDate(date.getDate() + index);
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
       return `${y}-${m}-${d}-${type}`;
     }
 
@@ -125,15 +143,51 @@
       }
     }
 
+    let startDate = new Date(); // 表示している週の開始日
+
+    function buildTable() {
+      const table = document.getElementById('record-table');
+      table.innerHTML = `
+        <tr class="header-row">
+          <th>日付</th>
+          <th>英単語</th>
+          <th>気持ち</th>
+          <th>〇・×</th>
+        </tr>
+      `;
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const dayOfWeek = date.getDay();
+        const dateStr = `${month}/${day} (${getJapaneseDayOfWeek(dayOfWeek)})`;
+        const row = createRecordRow(date, dateStr, dayOfWeek, i);
+        table.appendChild(row);
+      }
+      enableAutoSave();
+    }
+
+    function changeWeek(offset) {
+      startDate.setDate(startDate.getDate() + offset * 7);
+      buildTable();
+    }
+
+    function resetWeek() {
+      startDate = new Date();
+      buildTable();
+    }
+
     function enableAutoSave() {
       const rows = document.querySelectorAll('#record-table tr');
       rows.forEach((row, i) => {
         if (i === 0) return; // header skip
         const inputs = row.querySelectorAll('input');
         const stamps = row.querySelectorAll('.stamp');
-        const wordKey = getStorageKey(i - 1, 'word');
-        const feelingKey = getStorageKey(i - 1, 'feeling');
-        const stampKey = getStorageKey(i - 1, 'stamp');
+        const wordKey = getStorageKey(startDate, i - 1, 'word');
+        const feelingKey = getStorageKey(startDate, i - 1, 'feeling');
+        const stampKey = getStorageKey(startDate, i - 1, 'stamp');
 
         inputs[0].value = localStorage.getItem(wordKey) || '';
         inputs[1].value = localStorage.getItem(feelingKey) || '';
@@ -154,22 +208,7 @@
       });
     }
 
-    // 1週間分の行を作成
-    const table = document.getElementById('record-table');
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const dayOfWeek = date.getDay();
-      const dateStr = `${month}/${day} (${getJapaneseDayOfWeek(dayOfWeek)})`;
-      const row = createRecordRow(date, dateStr, dayOfWeek, i);
-      table.appendChild(row);
-    }
-
-    // 入力の自動保存機能
-    enableAutoSave();
+    buildTable(); // 初期表示
   </script>
 </body>
 </html>
