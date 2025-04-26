@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>日々の記録表</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .cell-content { min-height: 40px; }
+        .vocabulary-input, .feeling-input { width: 90%; border: 1px solid #ddd; padding: 5px; margin-top: 5px; }
+        .stamp-area { display: flex; justify-content: center; gap: 10px; margin-top: 5px; }
+        .stamp { width: 30px; height: 30px; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; user-select: none; }
+        .circle { background-color: #9de0ad; border: 1px solid #5cb85c; }
+        .cross { background-color: #f5b7b1; border: 1px solid #d9534f; }
+        .stamp:hover { transform: scale(1.1); transition: transform 0.2s; }
+        .header-row { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <table id="record-table">
+        <tr class="header-row">
+            <th>日付</th>
+            <th>英単語</th>
+            <th>気持ち</th>
+            <th>〇・×</th>
+        </tr>
+    </table>
+
+    <script>
+        function createRecordRow(date, dateStr, dayOfWeek) {
+            const tr = document.createElement('tr');
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                tr.style.backgroundColor = '#ffe4e1';
+            }
+            tr.innerHTML = `
+                <td class="date-header">${dateStr}</td>
+                <td><div class="cell-content"><input type="text" class="vocabulary-input" placeholder="例：Dog"></div></td>
+                <td><div class="cell-content"><input type="text" class="feeling-input" placeholder="例：たのしかった！"></div></td>
+                <td>
+                    <div class="stamp-area">
+                        <div class="stamp circle" onclick="selectStamp(this, 'circle')">〇</div>
+                        <div class="stamp cross" onclick="selectStamp(this, 'cross')">✕</div>
+                    </div>
+                </td>
+            `;
+            return tr;
+        }
+        function selectStamp(element, type) {
+            const stampArea = element.parentElement;
+            const circle = stampArea.querySelector('.circle');
+            const cross = stampArea.querySelector('.cross');
+            if (type === 'circle') {
+                circle.style.boxShadow = '0 0 5px 2px #5cb85c';
+                cross.style.boxShadow = '';
+            } else {
+                cross.style.boxShadow = '0 0 5px 2px #d9534f';
+                circle.style.boxShadow = '';
+            }
+        }
+        function getJapaneseDayOfWeek(day) {
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            return days[day];
+        }
+        const today = new Date();
+        const table = document.getElementById('record-table');
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const dayOfWeek = date.getDay();
+            const dateStr = `${month}/${day} (${getJapaneseDayOfWeek(dayOfWeek)})`;
+            const newRow = createRecordRow(date, dateStr, dayOfWeek);
+            table.appendChild(newRow);
+        }
+    </script>
+</body>
+	</html>
