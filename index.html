@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>日々の記録表</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .stamp-area {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    .stamp {
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      user-select: none;
+    }
+    .circle {
+      background-color: #9de0ad;
+      border: 1px solid #5cb85c;
+    }
+    .cross {
+      background-color: #f5b7b1;
+      border: 1px solid #d9534f;
+    }
+    .stamp:hover {
+      transform: scale(1.1);
+      transition: transform 0.2s;
+    }
+    .cell-content {
+      min-height: 40px;
+    }
+    .vocabulary-input, .feeling-input {
+      width: 90%;
+      border: 1px solid #ddd;
+      padding: 5px;
+      margin-top: 5px;
+    }
+    .header-row {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h2>日々の記録表</h2>
+  <table id="record-table">
+    <tr class="header-row">
+      <th>日付</th>
+      <th>英単語</th>
+      <th>気持ち</th>
+      <th>〇・×</th>
+    </tr>
+  </table>
+
+  <script>
+    function getJapaneseDayOfWeek(day) {
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      return days[day];
+    }
+
+    function createRecordRow(date, dateStr, dayOfWeek, rowIndex) {
+      const tr = document.createElement('tr');
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        tr.style.backgroundColor = '#ffe4e1'; // 土日ピンク
+      }
+      tr.innerHTML = `
+        <td class="date-header">${dateStr}</td>
+        <td><div class="cell-content"><input type="text" class="vocabulary-input"></div></td>
+        <td><div class="cell-content"><input type="text" class="feeling-input"></div></td>
+        <td>
+          <div class="stamp-area">
+            <div class="stamp circle">〇</div>
+            <div class="stamp cross">✕</div>
+          </div>
+        </td>
+      `;
+      return tr;
+    }
+
+    function getStorageKey(index, type) {
+      const today = new Date();
+      today.setDate(today.getDate() + index);
+      const y = today.getFullYear();
+      const m = today.getMonth() + 1;
+      const d = today.getDate();
+      return `${y}-${m}-${d}-${type}`;
+    }
+
+    function selectStamp(stampArea, type, key) {
+      const circle = stampArea.querySelector('.circle');
+      const cross = stampArea.querySelector('.cross');
+      if (type === 'circle') {
+        circle.style.boxShadow = '0 0 5px 2px #5cb85c';
+        cross.style.boxShadow = '';
+        localStorage.setItem(key, 'circle');
+      } else {
+        cross.style.boxShadow = '0 0 5px 2px #d9534f';
+        circle.style.boxShadow = '';
+        localStorage.setItem(key, 'cross');
+      }
+    }
+
+    function enableAutoSave() {
+      const rows = document.querySelectorAll('#record-table tr');
+      rows.forEach((row, i) => {
+        if (i === 0) return; // header skip
+        const inputs = row.querySelectorAll('input');
+        const stamps = row.querySelectorAll('.stamp');
+        const wordKey = getStorageKey(i - 1, 'word');
+        const feelingKey = getStorageKey(i - 1, 'feeling');
+        const stampKey = getStorageKey(i - 1, 'stamp');
+
+        inputs[0].value = localStorage.getItem(wordKey) || '';
+        inputs[1].value = localStorage.getItem(feelingKey) || '';
+
+        inputs[0].addEventListener('input', () => {
+          localStorage.setItem(wordKey, inputs[0].value);
+        });
+        inputs[1].addEventListener('input', () => {
+          localStorage.setItem(feelingKey, inputs[1].value);
+        });
+
+        const selected = localStorage.getItem(stampKey);
+        if (selected === 'circle') stamps[0].style.boxShadow = '0 0 5px 2px #5cb85c';
+        if (selected === 'cross') stamps[1].style.boxShadow = '0 0 5px 2px #d9534f';
+
+        stamps[0].addEventListener('click', () => selectStamp(stamps[0].parentElement, 'circle', stampKey));
+        stamps[1].addEventListener('click', () => selectStamp(stamps[1].parentElement, 'cross', stampKey));
+      });
+    }
+
+    // 1週間分の行を作成
+    const table = document.getElementById('record-table');
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const dayOfWeek = date.getDay();
+      const dateStr = `${month}/${day} (${getJapaneseDayOfWeek(dayOfWeek)})`;
+      const row = createRecordRow(date, dateStr, dayOfWeek, i);
+      table.appendChild(row);
+    }
+
+    // 入力の自動保存機能
+    enableAutoSave();
+  </script>
+</body>
+</html>
